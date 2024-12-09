@@ -52,6 +52,19 @@ const MultiStepForm: React.FC = () => {
       }
     }
   };
+  const handleStepClick = (stepNumber: number) => {
+    if (stepNumber < step) { // Allow jumping back to previous steps
+      setStep(stepNumber);
+    } else if (stepNumber === step) { // Prevent clicking on the current step
+      return;
+    } else {
+      // Check if the current step's fields are valid before moving to the next step
+      const isValid = handleSubmitValidation();
+      if (isValid) {
+        setStep(stepNumber);
+      }
+    }
+  };
 
   const handleGoBack = () => {
     setStep((prev) => prev - 1);
@@ -88,17 +101,21 @@ const MultiStepForm: React.FC = () => {
   <div className='multistep-container'>
     {/* Sidebar */}
     <aside className='sidebar' aria-label='Progress steps'>
-      <ol className='steps'>
-        {stepTitles.map((item, index) => (
-          <li key={index} className={`step ${step === index + 1 ? 'active' : ''}`}>
-            <span className='step-circle'>{index + 1}</span>
-            <span className='step-text'>
-              <span className='step-number'>Step {index + 1}</span>
-              <span className='step-title'>{item.title}</span>
-            </span>
-          </li>
-        ))}
-      </ol>
+    <ol className='steps'>
+  {stepTitles.map((item, index) => (
+    <li key={index} className={`step ${step === index + 1 ? 'active' : ''}`}>
+      <span className='step-circle'>{index + 1}</span>
+      <span 
+        className='step-text' 
+        onClick={() => !isMobile && handleStepClick(index + 1)} // Only allow click if not mobile
+        style={{ cursor: 'pointer' }} // Change cursor to pointer for better UX
+      >
+        <span className='step-number'>Step {index + 1}</span>
+        <span className='step-title'>{item.title}</span>
+      </span>
+    </li>
+  ))}
+</ol>
     </aside>
 
     {/* Main Content */}
