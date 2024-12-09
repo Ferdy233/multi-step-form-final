@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '../Header/Header';
 import Footer from '../Footer/Footer';
 import Step1 from '../Step1/Step1';
 import Step2 from '../Step2/Step2';
 import Step3 from '../Step3/Step3';
 import Step4 from '../Step4/Step4';
+import { useNavigate } from 'react-router-dom';
 import Confirmation from '../Confirmation/Confirmation';
 import './MultiStepForm.scss';
 import useFormValidation from '../../hooks/useFormValidation';
@@ -12,6 +13,7 @@ import usePlanSelection from '../../hooks/usePlanSelection';
 import useMediaQuery from '../../hooks/useMediaQuery ';
 
 const MultiStepForm: React.FC = () => {
+  const navigate = useNavigate(); 
   const { formData, formErrors, isSubmitted, handleFormChange, handleSubmitValidation } = useFormValidation({
     name: '',
     email: '',
@@ -19,16 +21,30 @@ const MultiStepForm: React.FC = () => {
   });
 
   const { billingType, selectedPlan, handlePlanChange, handleBillingToggle } = usePlanSelection();
-  const [step, setStep] = useState(1);
-  const [selectedAddOns, setSelectedAddOns] = useState<Set<string>>(new Set());
+
+  const [step, setStep] = useState<number>(() => {
+    const savedStep = localStorage.getItem('step');
+    return savedStep ? Number(savedStep) : 1;
+  });
+
+  const [selectedAddOns, setSelectedAddOns] = useState<Set<string>>(() => {
+    const savedAddOns = localStorage.getItem('selectedAddOns');
+    return savedAddOns ? new Set(JSON.parse(savedAddOns)) : new Set();
+  });
+
   const [isConfirmed, setIsConfirmed] = useState(false);
   const isMobile = useMediaQuery('(max-width:768px)');
+
+  // Save step to localStorage
+  useEffect(() => {
+    localStorage.setItem('step', step.toString());
+  }, [step]);
 
   const handleNextStep = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (step === 4) {
-      setIsConfirmed(true); // Set confirmation state when on Step 4
+      setIsConfirmed(true);
     } else {
       const isValid = handleSubmitValidation();
       if (isValid) {
@@ -49,8 +65,15 @@ const MultiStepForm: React.FC = () => {
       } else {
         newSelected.add(addOnId);
       }
+      // Convert Set to Array before saving
+      localStorage.setItem('selectedAddOns', JSON.stringify(Array.from(newSelected)));
       return newSelected;
     });
+  };
+
+  const resetForm = () => {
+    localStorage.clear();
+    navigate('/');
   };
 
   const stepTitles = [
@@ -62,41 +85,44 @@ const MultiStepForm: React.FC = () => {
 
   return (
     <form className='center-wrapper' onSubmit={handleNextStep}>
-      <div className='multistep-container'>
-        {/* Sidebar */}
-        <aside className='sidebar' aria-label='Progress steps'>
-          <ol className='steps'>
-            {stepTitles.map((item, index) => (
-              <li key={index} className={`step ${step === index + 1 ? 'active' : ''}`}>
-                <span className='step-circle'>{index + 1}</span>
-                <span className='step-text'>
-                  <span className='step-number'>Step {index + 1}</span>
-                  <span className='step-title'>{item.title}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </aside>
+  <div className='multistep-container'>
+    {/* Sidebar */}
+    <aside className='sidebar' aria-label='Progress steps'>
+      <ol className='steps'>
+        {stepTitles.map((item, index) => (
+          <li key={index} className={`step ${step === index + 1 ? 'active' : ''}`}>
+            <span className='step-circle'>{index + 1}</span>
+            <span className='step-text'>
+              <span className='step-number'>Step {index + 1}</span>
+              <span className='step-title'>{item.title}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </aside>
 
-        {/* Main Content */}
-        <section className={`form-content ${!isConfirmed ? 'not-confirmed' : 'confirmed'}`} aria-labelledby='header-title'>
-          {!isConfirmed && (
-            <>
-              <Header title={stepTitles[step - 1].headerTitle} description={stepTitles[step - 1].description} titleId='header-title' />
-              {step === 1 && <Step1 formData={formData} formErrors={formErrors} isSubmitted={isSubmitted} onChange={handleFormChange} />}
-              {step === 2 && <Step2 billingType={billingType} selectedPlan={selectedPlan} onBillingToggle={handleBillingToggle} onPlanChange={handlePlanChange} />}
-              {step === 3 && <Step3 billingType={billingType} selectedAddOns={selectedAddOns} onToggleAddOn={handleToggleAddOn} />}
-              {step === 4 && <Step4 billingType={billingType} selectedPlan={selectedPlan} selectedAddOns={selectedAddOns} onGoToPlanStep={() => setStep(2)} />}
-              {!isMobile && <Footer step={step} onBack={step > 1 ? handleGoBack : undefined} />}
-            </>
-          )}
-          {isConfirmed && <Confirmation />} {/* Render Confirmation in form-content */}
-        </section>
-      </div>
+    {/* Main Content */}
+    <section className={`form-content ${!isConfirmed ? 'not-confirmed' : 'confirmed'}`} aria-labelledby='header-title'>
+      {/* Reset Button */}
+      {!isConfirmed && (
+    <button className="reset-button" type="button" onClick={resetForm}>Reset</button>
+  )}
+      {!isConfirmed && (
+        <>
+          <Header title={stepTitles[step - 1].headerTitle} description={stepTitles[step - 1].description} titleId='header-title' />
+          {step === 1 && <Step1 formData={formData} formErrors={formErrors} isSubmitted={isSubmitted} onChange={handleFormChange} />}
+          {step === 2 && <Step2 billingType={billingType} selectedPlan={selectedPlan} onBillingToggle={handleBillingToggle} onPlanChange={handlePlanChange} />}
+          {step === 3 && <Step3 billingType={billingType} selectedAddOns={selectedAddOns} onToggleAddOn={handleToggleAddOn} />}
+          {step === 4 && <Step4 billingType={billingType} selectedPlan={selectedPlan} selectedAddOns={selectedAddOns} onGoToPlanStep={() => setStep(2)} />}
+          {!isMobile && <Footer step={step} onBack={step > 1 ? handleGoBack : undefined} />}
+        </>
+      )}
+      {isConfirmed && <Confirmation />}
+    </section>
+  </div>
 
-      {/* Render Footer outside form-content for mobile view */}
-      {!isConfirmed && isMobile && <Footer step={step} onBack={step > 1 ? handleGoBack : undefined} />}
-    </form>
+  {!isConfirmed && isMobile && <Footer step={step} onBack={step > 1 ? handleGoBack : undefined} />}
+</form>
   );
 };
 
