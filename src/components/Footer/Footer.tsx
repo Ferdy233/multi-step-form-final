@@ -1,5 +1,7 @@
-import React from 'react';
-import './Footer.scss';
+import React from "react";
+import "./Footer.scss";
+import { useAppDispatch, useAppSelector } from "../../hooks/useRedux";
+import { incrementStep, selectStep } from "../../features/formSlice";
 
 interface FooterProps {
   step: number;
@@ -7,15 +9,20 @@ interface FooterProps {
 }
 
 const Footer: React.FC<FooterProps> = ({ step, onBack }) => {
+
+
   return (
-    <footer className='form-footer'>
+    <footer className="form-footer">
       {onBack && (
-        <button type='button' className='go-back-btn' onClick={onBack}>
+        <button type="button" className="go-back-btn" onClick={onBack}>
           Go Back
         </button>
       )}
-      <button type='submit' className={`next-step-btn ${step === 4 ? 'confirm-btn' : ''}`}>
-        {step === 4 ? 'Confirm' : 'Next Step'}
+      <button
+        type="submit"
+        className={`next-step-btn ${step === 4 ? "confirm-btn" : ""}`}
+      >
+        {step === 4 ? "Confirm" : "Next Step"}
       </button>
     </footer>
   );

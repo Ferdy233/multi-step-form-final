@@ -1,4 +1,4 @@
-// src/utils/validateForm.ts
+
 import { FormData, FormErrors } from '../../types/formTypes';
 
 export const validateForm = (formData: FormData): FormErrors => {
